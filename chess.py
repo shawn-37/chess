@@ -14,21 +14,16 @@ pygame.display.set_caption("Python Chess")
 font = pygame.font.SysFont("arial", 20)
 timer = pygame.time.Clock()
 FPS = 60
+ 
+#def getImages(pieces):
 
-pieceImages = {
-    "k": pygame.transform.scale(pygame.image.load("ChessPieces/bk.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "q": pygame.transform.scale(pygame.image.load("ChessPieces/bq.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "r": pygame.transform.scale(pygame.image.load("ChessPieces/br.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "b": pygame.transform.scale(pygame.image.load("ChessPieces/bb.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "n": pygame.transform.scale(pygame.image.load("ChessPieces/bn.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "p": pygame.transform.scale(pygame.image.load("ChessPieces/bp.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "K": pygame.transform.scale(pygame.image.load("ChessPieces/wk.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "Q": pygame.transform.scale(pygame.image.load("ChessPieces/wq.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "R": pygame.transform.scale(pygame.image.load("ChessPieces/wr.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "B": pygame.transform.scale(pygame.image.load("ChessPieces/wb.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "N": pygame.transform.scale(pygame.image.load("ChessPieces/wn.png"), (SQUARE_SIZE, SQUARE_SIZE)),
-    "P": pygame.transform.scale(pygame.image.load("ChessPieces/wp.png"), (SQUARE_SIZE, SQUARE_SIZE))
-}
+def load_piece_images():
+    pieces = ["bk", "bq", "br", "bb", "bn", "bp", "wk", "wq", "wr", "wb", "wn", "wp"]
+    return {piece: pygame.transform.scale(pygame.image.load(f"ChessPieces/{piece}.png"), (SQUARE_SIZE, SQUARE_SIZE)) for piece in pieces}
+
+pieceImages = load_piece_images()
+
+pieces = ["k", "q", "r", "b", "n", "p"]
 
 board = [
     ["r", "n", "b", "q", "k", "b", "n", "r"],
@@ -40,12 +35,15 @@ board = [
     ["P", "P", "P", "P", "P", "P", "P", "P"],
     ["R", "N", "B", "Q", "K", "B", "N", "R"]
 ]
+boardImages = [["." for _ in range(8)] for _ in range(8)]
 
 
 capturedBlackPieces = []
 capturedWhitePieces = []
 
-turn = 0 # 0 = white, 1 = black
+legalMoves = []
+
+turnStep = 0 # 0 = whites turn no piece seleted, 1 = whites turn piece selected, 2 = blacks turn no piece seletected, 3 = blacks turn piece selected
 pieceSelected = None
 
 # draw chess board
@@ -66,7 +64,41 @@ def draw_pieces():
         for rank in range(8):
             piece = board[rank][file]
             if piece != ".":
-                screen.blit(pieceImages.get(piece), (file * SQUARE_SIZE + BOARD_OFFSET, rank * SQUARE_SIZE + BOARD_OFFSET))
+                screen.blit(pieceImages[piece], (file * SQUARE_SIZE + BOARD_OFFSET, rank * SQUARE_SIZE + BOARD_OFFSET))
+
+
+def prepare_pieces():
+    for file in range(8):
+        for rank in range(8):
+            piece = board[rank][file]
+            if piece != ".":
+                image = pieceImages[piece]
+                boardImages[rank][file] = image
+
+def move_piece(start, end):
+    x1, y1 = start
+    x2, y2 = end
+
+    piece = board[y1][x1]
+
+    board[y2][x2] = piece
+    board[y1][x1] = "."
+
+    boardImages[y2][x2] = boardImages[y1][x1]
+    boardImages[y1][y2] = "." 
+
+def checkPawn(location, turnStep):
+    x, y = location
+    if turnStep < 2:
+        if 0 <= y - 1 < 8 and board[y - 1] == ".":
+            legalMoves.append(board[y - 1])
+        if 0 <= x - 1 < 8 and board[y - 1][x - 1] in pieces:
+            legalMoves.append(board[y - 1][x - 1])
+        if 0 <= x - 1 < 8 and board[y - 1][x + 1] in pieces:
+            legalMoves.append(board[y - 1][x + 1])
+
+
+prepare_pieces()
 run = True
 while run:
     timer.tick(FPS)
@@ -82,14 +114,31 @@ while run:
             xCoord = int((event.pos[0] - BOARD_OFFSET) // SQUARE_SIZE)
             yCoord = int((event.pos[1] - BOARD_OFFSET) // SQUARE_SIZE)
             coord = (xCoord, yCoord)
-            print(coord)
-            if turn == 0:
-                piece = board[yCoord][xCoord]
-                if piece.isupper():
-                    pieceImages[piece] = pygame.transform.scale_by(pieceImages.get(piece), 1.05)
-            if turn == 1:
-                piece = board[yCoord][xCoord]
-                if piece.islower():
-                    pieceImages[piece] = pygame.transform.scale_by(pieceImages.get(piece), 1.05)
+            piece = board[yCoord][xCoord]
+            if piece != ".":
+                if turnStep < 2 and piece.isupper:
+                    if pieceSelected != piece:
+                        pieceSelected = piece
+                        if piece == "P":
+                            checkPawn(coord, turnStep)
+                    else:
+                        pieceSelected = None
+                elif turnStep > 1 and piece.islower:
+                    if pieceSelected != piece:
+                        pieceSelected = piece
+                    else:
+                        pieceSelected = None
+            else:
+                if turnStep == 1:
+                    pass
+                
+
+
+
     pygame.display.flip()
+print(boardImages)
 pygame.quit()
+
+# NOTE: Board is the board notations, manipulating this will change the board images
+# NOTE: Board images is updated based off the board
+# NOTE: 
