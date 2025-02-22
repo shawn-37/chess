@@ -139,6 +139,6 @@ while run:
 print(boardImages)
 pygame.quit()
 
-# NOTE: Board is the board notations, manipulating this will change the board images
-# NOTE: Board images is updated based off the board
-# NOTE: 
+
+'''goal: If piece is selected (!= ".") then make the piece selected and update legal moves table by calling checkPawn func. 
+Else (meaning that a empty square was selected) if a piece was previously selected check if the square is that was selected is in legal moves table, if it is use move_piece() to move the piece to new square'''
